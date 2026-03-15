@@ -1,109 +1,75 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>ระบบรัฐสภาจำลอง</title>
+    <title>Dashboard - ระบบรายงานผลมติรัฐสภา</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; background: #121212; color: white; text-align: center; padding: 20px; }
-        .card { background: #1e1e1e; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; border: 1px solid #333; }
-        .bar-bg { background: #333; height: 20px; border-radius: 10px; overflow: hidden; margin: 10px 0; }
-        .bar-fill { height: 100%; width: 0%; transition: 0.5s; }
-        button { padding: 10px 20px; margin: 5px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; }
-        .btn-agree { background: #2ecc71; color: white; }
-        .btn-disagree { background: #e74c3c; color: white; }
-        .btn-abstain { background: #f1c40f; }
-        .btn-admin { background: #3498db; color: white; margin-top: 20px; }
+        :root { --bg: #0a0a0a; --card: #151515; --agree: #00ff88; --disagree: #ff4d4d; --abstain: #ffcc00; }
+        body { font-family: 'Sarabun', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        .header { width: 100%; background: #1a1a1a; padding: 20px 0; text-align: center; border-bottom: 2px solid #333; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .main { width: 90%; max-width: 1000px; margin-top: 40px; }
+        .vote-card { background: var(--card); padding: 40px; border-radius: 20px; border: 1px solid #222; }
+        .row { display: grid; grid-template-columns: 150px 1fr 120px; align-items: center; margin-bottom: 35px; gap: 20px; }
+        .label { font-size: 26px; font-weight: bold; }
+        .bar-bg { background: #222; height: 55px; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
+        .bar-fill { height: 100%; width: 0%; transition: 1s cubic-bezier(0.1, 0.7, 0.1, 1); }
+        .num { font-family: 'JetBrains Mono'; font-size: 45px; text-align: right; }
+        .footer { display: flex; justify-content: space-between; margin-top: 30px; padding-top: 20px; border-top: 1px solid #333; font-size: 24px; color: #888; }
+        #announcement { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; background: rgba(0,0,0,0.95); border: 2px solid var(--abstain); padding: 60px; border-radius: 30px; text-align: center; z-index: 100; box-shadow: 0 0 100px #000; }
     </style>
 </head>
 <body>
-
-    <div class="card">
-        <h1>🏛️ สรุปมติรัฐสภา</h1>
-        <div id="status">สถานะ: รอเปิดประชุม</div>
-        <hr>
-        <p>เห็นชอบ: <span id="txt-agree">0</span></p>
-        <div class="bar-bg"><div id="bar-agree" class="bar-fill" style="background:#2ecc71"></div></div>
-        
-        <p>ไม่เห็นชอบ: <span id="txt-disagree">0</span></p>
-        <div class="bar-bg"><div id="bar-disagree" class="bar-fill" style="background:#e74c3c"></div></div>
-        
-        <p>งดออกเสียง: <span id="txt-abstain">0</span></p>
-        <div class="bar-bg"><div id="bar-abstain" class="bar-fill" style="background:#f1c40f"></div></div>
-        
-        <h3>รวม: <span id="txt-total">0</span></h3>
+    <div class="header"><h1>🏛️ รายงานผลการลงมติรายบุคคล (Live)</h1></div>
+    <div class="main">
+        <div class="vote-card">
+            <div class="row">
+                <div class="label" style="color:var(--agree)">เห็นชอบ</div>
+                <div class="bar-bg"><div id="b-agree" class="bar-fill" style="background:var(--agree)"></div></div>
+                <div id="t-agree" class="num">0</div>
+            </div>
+            <div class="row">
+                <div class="label" style="color:var(--disagree)">ไม่เห็นชอบ</div>
+                <div class="bar-bg"><div id="b-disagree" class="bar-fill" style="background:var(--disagree)"></div></div>
+                <div id="t-disagree" class="num">0</div>
+            </div>
+            <div class="row">
+                <div class="label" style="color:var(--abstain)">งดออกเสียง</div>
+                <div class="bar-bg"><div id="b-abstain" class="bar-fill" style="background:var(--abstain)"></div></div>
+                <div id="t-abstain" class="num">0</div>
+            </div>
+            <div class="footer"><div>องค์ประชุมที่ลงมติ</div><div style="color:#3498db; font-weight:bold;"><span id="t-total">0</span> ท่าน</div></div>
+        </div>
     </div>
-
-    <div id="vote-section" style="display:none;" class="card">
-        <h3>ลงมติของท่าน</h3>
-        <button class="btn-agree" onclick="castVote('agree')">เห็นชอบ</button>
-        <button class="btn-disagree" onclick="castVote('disagree')">ไม่เห็นชอบ</button>
-        <button class="btn-abstain" onclick="castVote('abstain')">งดออกเสียง</button>
-    </div>
-
-    <div class="card" style="margin-top:20px; border-color: #3498db;">
-        <h4>ควบคุมโดยประธานสภา</h4>
-        <button class="btn-admin" onclick="updateState('voting')">เปิดลงมติ</button>
-        <button class="btn-admin" style="background:#e67e22" onclick="updateState('closed')">ปิด/สรุปผล</button>
-        <button class="btn-admin" style="background:#7f8c8d" onclick="resetAll()">ล้างคะแนน</button>
-    </div>
+    <div id="announcement"><h1 id="res-h" style="font-size:100px; margin:0;"></h1><p id="res-p" style="font-size:30px;"></p></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, updateDoc, increment, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // *** เปลี่ยนตรงนี้เป็น Config ของคุณ ***
-        const firebaseConfig = {
-  apiKey: "AIzaSyA11MHrohCgz4xGUUmqcoyc_DGQeSsOPAM",
-  authDomain: "gameparliament-a2045.firebaseapp.com",
-  projectId: "gameparliament-a2045",
-  storageBucket: "gameparliament-a2045.firebasestorage.app",
-  messagingSenderId: "356296704967",
-  appId: "1:356296704967:web:217dbc3ce7ac7a76354fe2",
-  measurementId: "G-1D339J2NL8"
-};
-
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        const firebaseConfig = { apiKey: "AIzaSyA11MHrohCgz4xGUUmqcoyc_DGQeSsOPAM", authDomain: "gameparliament-a2045.firebaseapp.com", projectId: "gameparliament-a2045", storageBucket: "gameparliament-a2045.firebasestorage.app", messagingSenderId: "356296704967", appId: "1:356296704967:web:217dbc3ce7ac7a76354fe2" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const docRef = doc(db, "parliament", "live_data");
-
-        // ติดตามข้อมูลแบบ Real-time
-        onSnapshot(docRef, (snap) => {
+        onSnapshot(doc(db, "parliament", "live_data"), (snap) => {
             const d = snap.data();
-            const total = (d.agree || 0) + (d.disagree || 0) + (d.abstain || 0);
-            
-            document.getElementById('txt-agree').innerText = d.agree || 0;
-            document.getElementById('txt-disagree').innerText = d.disagree || 0;
-            document.getElementById('txt-abstain').innerText = d.abstain || 0;
-            document.getElementById('txt-total').innerText = total;
-
-            if(total > 0) {
-                document.getElementById('bar-agree').style.width = (d.agree/total*100) + "%";
-                document.getElementById('bar-disagree').style.width = (d.disagree/total*100) + "%";
-                document.getElementById('bar-abstain').style.width = (d.abstain/total*100) + "%";
+            const total = d.agree + d.disagree + d.abstain;
+            document.getElementById('t-agree').innerText = d.agree;
+            document.getElementById('t-disagree').innerText = d.disagree;
+            document.getElementById('t-abstain').innerText = d.abstain;
+            document.getElementById('t-total').innerText = total;
+            if(total > 0){
+                document.getElementById('b-agree').style.width = (d.agree/total*100) + "%";
+                document.getElementById('b-disagree').style.width = (d.disagree/total*100) + "%";
+                document.getElementById('b-abstain').style.width = (d.abstain/total*100) + "%";
             }
-
-            // คุมการแสดงผลปุ่มโหวต
-            const voteSec = document.getElementById('vote-section');
-            if(d.state === 'voting') {
-                document.getElementById('status').innerText = "🟢 สถานะ: กำลังลงมติ";
-                if(!localStorage.getItem('voted')) voteSec.style.display = 'block';
-            } else {
-                voteSec.style.display = 'none';
-                document.getElementById('status').innerText = d.state === 'closed' ? "🔴 สถานะ: ปิดรับโหวต" : "⚪ สถานะ: รอประชุม";
-            }
+            const ann = document.getElementById('announcement');
+            if(d.state === 'closed'){
+                ann.style.display = 'block';
+                const win = d.agree > (total/2) && total > 0;
+                document.getElementById('res-h').innerText = win ? "อนุมัติ" : "ไม่อนุมัติ";
+                document.getElementById('res-h').style.color = win ? "#00ff88" : "#ff4d4d";
+                document.getElementById('res-p').innerText = win ? "คะแนนเห็นชอบเกินกึ่งหนึ่งของสภา" : "คะแนนเห็นชอบไม่ถึงกึ่งหนึ่ง";
+            } else { ann.style.display = 'none'; }
         });
-
-        window.castVote = async (type) => {
-            await updateDoc(docRef, { [type]: increment(1) });
-            localStorage.setItem('voted', 'true');
-            alert("ลงมติเรียบร้อย");
-        };
-
-        window.updateState = async (s) => { await updateDoc(docRef, { state: s }); };
-        window.resetAll = async () => {
-            await setDoc(docRef, { agree: 0, disagree: 0, abstain: 0, state: 'idle' });
-            localStorage.removeItem('voted');
-        };
     </script>
 </body>
 </html>
